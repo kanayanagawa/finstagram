@@ -1,9 +1,13 @@
-get '/' do
+helpers do
+    def current_user
+        User.find_by(id: session[:user_id])
+    end    
+end
 
+get '/' do
     @posts = Post.order(created_at: :desc)
     erb(:index)
 end
-
 get '/signup' do
     @user = User.new
     erb(:signup)
@@ -19,7 +23,7 @@ post '/signup' do
     @user = User.new({ email: email, avatar_url: avatar_url, username: username, password: password})
     
     if @user.save
-    "User #{username} saved!"
+        redirect to('/login')
     else
     erb(:signup)
     end
@@ -37,7 +41,7 @@ post '/login' do
     
     if user && user.password == password
             session[:user_id] = user.id
-            "Success! User with id #{session[:user_id]} is logged in!"
+            redirect to('/')
     else
         @error_message = "Login failed."
         erb(:login)
@@ -45,5 +49,24 @@ post '/login' do
 end
 
 get '/logout' do
-  session[:user_id] = nil
+    session[:user_id] = nil
+    redirect to('/')
 end
+
+get '/posts/new' do
+    @post = Post.new
+    erb(:"posts/new")
+end
+
+post '/posts' do
+    photo_url = params[:photo_url]
+    
+    @post = Post.new({ photo_url: photo_url, user_id: current_user.id })
+    
+    if @post.save
+        redirect (to ('/'))
+    else
+        erb(:"posts/new")
+    end
+end
+
